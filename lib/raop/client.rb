@@ -107,16 +107,12 @@ class Net::RAOP::Client
   class << self
     def encode_alac(bits)
       bits = bits.unpack('C*')
+
       new_bits = Net::RAOP::BitBuffer.new(bits.length + 3) { |x| 0 }
-      new_bits.write_bits(1, 3)
-      new_bits.write_bits(0, 4)
-      new_bits.write_bits(0, 12)
-      new_bits.write_bits(0, 1)
-      new_bits.write_bits(0, 2)
-      new_bits.write_bits(1, 1)
+
       0.step(bits.length - 1, 2) do |i|
-        new_bits.write_bits(bits[i + 1], 8)
-        new_bits.write_bits(bits[i], 8)
+        new_bits.add(i + 2, bits[i + 1])
+        new_bits.add(i + 3, bits[i])
       end
       new_bits.pack('C*')
     end
