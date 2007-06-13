@@ -1,0 +1,6 @@
+= Net::RAOP::Client CHANGELOG
+
+== 0.1.0
+
+* Birthday!
+

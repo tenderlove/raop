@@ -1,0 +1,14 @@
+CHANGELOG.txt
+LICENSE.txt
+Manifest.txt
+README.txt
+Rakefile
+lib/raop.rb
+lib/raop/bit_buffer.rb
+lib/raop/client.rb
+lib/raop/rtsp.rb
+test/data/frame.txt
+test/data/o.raw
+test/data/out_frame.txt
+test/test_alac.rb
+test/test_raop.rb
