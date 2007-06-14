@@ -6,6 +6,8 @@ class Net::RAOP::Client
   # The version of Net::RAOP::Client you're using
   VERSION = '0.1.0'
 
+  ##
+  # Create a new Net::RAOP::Client to connect to +host+ Airport Express
   def initialize(host)
     @host         = host
     @aes_crypt    = aes_cipher
@@ -14,6 +16,8 @@ class Net::RAOP::Client
     @data_socket  = nil
   end
 
+  ##
+  # Connect to the Airport Express
   def connect
     random_data = Array.new(28) { |x| rand(0xFF) }.pack('C*')
 
@@ -48,6 +52,8 @@ class Net::RAOP::Client
     response = @rtsp_client.request(params)
   end
 
+  ##
+  # Set the +volume+ on the Airport Express. -144 is quiet, 0 is loud.
   def volume=(volume)
     volume = 0 + volume if volume < 0
     raise ArgumentError if volume < 0 || volume > 144
@@ -57,12 +63,16 @@ class Net::RAOP::Client
     response = @rtsp_client.request(params)
   end
 
+  ##
+  # Stream +file+ to the Airport Express
   def play(file)
     while data = file.read(4096 * 2 * 2)
       send_sample(self.class.encode_alac(data))
     end
   end
 
+  ##
+  # Disconnect from the Airport Express
   def disconnect
     @rtsp_client.request(Net::RTSP::Teardown.new)
   end
