@@ -3,8 +3,9 @@ LICENSE.txt
 Manifest.txt
 README.txt
 Rakefile
+examples/oscillate.rb
+examples/read_stdin.rb
 lib/raop.rb
-lib/raop/bit_buffer.rb
 lib/raop/client.rb
 lib/raop/rtsp.rb
 test/data/frame.txt

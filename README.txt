@@ -17,6 +17,7 @@ music to an Airport Express.
 == TODO
 
 * Add support for decoding OGG, M4P, MP3
+* Speed up encoding
 
 == AUTHORS
 
