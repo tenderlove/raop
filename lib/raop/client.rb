@@ -50,7 +50,7 @@ class Net::RAOP::Client
 
   def play(file)
     while data = file.read(4096 * 2 * 2)
-      send_sample self.class.encode_alac(data)
+      send_sample(self.class.encode_alac(data))
     end
   end
 
@@ -59,25 +59,36 @@ class Net::RAOP::Client
   end
 
   private
+  @@data_cache = {}
   def send_sample(sample, pos = 0, count = sample.length)
     # FIXME do we really need +pos+ or +count+?
     
     crypt_length = sample.length / 16 * 16
 
     @aes_crypt.reset
-    data = [
-      0x24, 0x00, 0x00, 0x00,
-      0xF0, 0xFF, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00,
-    ] +
-    # Encryption section
-      @aes_crypt.update(sample.slice(0, crypt_length)).unpack('C*') +
-      sample.slice(crypt_length, sample.length).unpack('C*')
+    unless data = @@data_cache[count]
+      data = [
+        0x24, 0x00, 0x00, 0x00,
+        0xF0, 0xFF, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+      ]
+      ab = [count + 12].pack('n').unpack('C*')
+      ab.each_with_index { |x, i| data[i + 2] = x }
+      @@data_cache[count] = data.pack('C*')
+      data = @@data_cache[count]
+    end
 
-    ab = [count + 12].pack('n').unpack('C*')
-    ab.each_with_index { |x, i| data[i + 2] = x }
-    @data_socket.write(data.pack('C*'))
+    #@data_socket.write(data)
+    #@data_socket.write @aes_crypt.update(sample.slice(0, crypt_length))
+    #@data_socket.write sample.slice(crypt_length, sample.length)
+    #enc_data = data +
+    ## Encryption section
+    #  @aes_crypt.update(sample.slice(0, crypt_length)) +
+    #  sample.slice(crypt_length, sample.length)
+
+    ##data.pack('C*')
+    #@data_socket.write(enc_data)
   end
 
   def rsa_encrypt(plain_text)
@@ -106,16 +117,21 @@ class Net::RAOP::Client
 
   class << self
     def encode_alac(bits)
-      #new_bits = Net::RAOP::BitBuffer.new(bits.length + 3) { |x| 0 }
-
+      #bits = bits.unpack('C*')
       new_bits = Array.new(bits.length + 3) { |x| 0 }
       new_bits[0] = 32
       new_bits[2] = 2
 
       i = 0
+      prev = bits[i]
       while i < bits.length
-        new_bits.add_alac(i + 2, bits[i + 1])
-        new_bits.add_alac(i + 3, bits[i])
+        data = bits[i + 1]
+        data1 = bits[i]
+
+        new_bits[i + 2] |= data >> 7
+        new_bits[i + 3] |= ((data & 0x7F) << 1) | (data1 >> 7)
+        new_bits[i + 4] |= (data1 & 0x7F) << 1
+
         i += 2
       end
       new_bits.pack('C*')
