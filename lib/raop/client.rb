@@ -48,6 +48,15 @@ class Net::RAOP::Client
     response = @rtsp_client.request(params)
   end
 
+  def volume=(volume)
+    volume = 0 + volume if volume < 0
+    raise ArgumentError if volume < 0 || volume > 144
+    params = Net::RTSP::SetParameter.new(@session_id,
+                                         { :volume => "-#{volume}".to_i }
+                                        )
+    response = @rtsp_client.request(params)
+  end
+
   def play(file)
     while data = file.read(4096 * 2 * 2)
       send_sample(self.class.encode_alac(data))

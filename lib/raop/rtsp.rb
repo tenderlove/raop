@@ -119,6 +119,7 @@ module Net
       end
 
       def write_body(sock)
+        #$stdout.write(@body) if @body
         sock.write(@body) if @body
       end
     end
@@ -135,7 +136,7 @@ module Net
         self['Content-Type'] = 'text/parameters'
         buf = ''
         opts.each do |k,v|
-          buf << "#{k}: #{sprintf('%0.6f', v)}"
+          buf << "#{k}: #{sprintf('%0.6f', v)}\r\n"
         end
         @body = buf if buf.length > 0
       end
