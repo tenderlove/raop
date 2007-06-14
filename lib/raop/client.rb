@@ -66,29 +66,25 @@ class Net::RAOP::Client
     crypt_length = sample.length / 16 * 16
 
     @aes_crypt.reset
-    unless data = @@data_cache[count]
-      data = [
+    unless header = @@data_cache[count]
+      header = [
         0x24, 0x00, 0x00, 0x00,
         0xF0, 0xFF, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00,
       ]
       ab = [count + 12].pack('n').unpack('C*')
-      ab.each_with_index { |x, i| data[i + 2] = x }
-      @@data_cache[count] = data.pack('C*')
-      data = @@data_cache[count]
+      ab.each_with_index { |x, i| header[i + 2] = x }
+      @@data_cache[count] = header.pack('C*')
+      header = @@data_cache[count]
     end
 
-    #@data_socket.write(data)
-    #@data_socket.write @aes_crypt.update(sample.slice(0, crypt_length))
-    #@data_socket.write sample.slice(crypt_length, sample.length)
-    #enc_data = data +
-    ## Encryption section
-    #  @aes_crypt.update(sample.slice(0, crypt_length)) +
-    #  sample.slice(crypt_length, sample.length)
+    data = header +
+    # Encryption section
+      @aes_crypt.update(sample.slice(0, crypt_length)) +
+      sample.slice(crypt_length, sample.length)
 
-    ##data.pack('C*')
-    #@data_socket.write(enc_data)
+    @data_socket.syswrite(data)
   end
 
   def rsa_encrypt(plain_text)
@@ -116,15 +112,19 @@ class Net::RAOP::Client
   end
 
   class << self
+    @@cache = "\0" * 16387
+
     def encode_alac(bits)
-      #bits = bits.unpack('C*')
-      new_bits = Array.new(bits.length + 3) { |x| 0 }
+      new_bits =
+        bits.length == 16384 ?
+        @@cache.dup : "\0" * (bits.length + 3)
+
       new_bits[0] = 32
       new_bits[2] = 2
 
       i = 0
-      prev = bits[i]
-      while i < bits.length
+      len = bits.length
+      while i < len
         data = bits[i + 1]
         data1 = bits[i]
 
@@ -134,7 +134,7 @@ class Net::RAOP::Client
 
         i += 2
       end
-      new_bits.pack('C*')
+      new_bits
     end
   end
 end
