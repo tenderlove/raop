@@ -8,8 +8,8 @@ examples/read_stdin.rb
 lib/raop.rb
 lib/raop/client.rb
 lib/raop/rtsp.rb
-test/data/frame.txt
+test/data/frame.b64
 test/data/o.raw
-test/data/out_frame.txt
+test/data/out_frame.b64
 test/test_alac.rb
 test/test_raop.rb

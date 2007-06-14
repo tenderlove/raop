@@ -3,10 +3,10 @@ require 'raop'
 
 class ALACTest < Test::Unit::TestCase
   def setup
-    File.open('test/data/frame.txt', 'rb') { |file|
+    File.open('test/data/frame.b64', 'rb') { |file|
       @input_frame = file.readline.chomp.unpack('m').first
     }
-    File.open('test/data/out_frame.txt', 'rb') { |file|
+    File.open('test/data/out_frame.b64', 'rb') { |file|
       @output_frame = file.readline.chomp.unpack('m').first
     }
   end
