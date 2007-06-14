@@ -14,6 +14,10 @@ music to an Airport Express.
   raop.play $stdin
   raop.disconnect
 
+Then pipe your decoded stream:
+
+  % lame --decode phil_collins.mp3 - | ruby stream.rb
+
 == TODO
 
 * Add support for decoding OGG, M4P, MP3
