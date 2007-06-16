@@ -55,8 +55,8 @@ class Net::RAOP::Client
   ##
   # Set the +volume+ on the Airport Express. -144 is quiet, 0 is loud.
   def volume=(volume)
-    volume = 0 + volume if volume < 0
-    raise ArgumentError if volume < 0 || volume > 144
+    volume = volume.abs
+    raise ArgumentError if volume > 144
     params = Net::RTSP::SetParameter.new(@session_id,
                                          { :volume => "-#{volume}".to_i }
                                         )
@@ -103,7 +103,7 @@ class Net::RAOP::Client
       @aes_crypt.update(sample.slice(0, crypt_length)) +
       sample.slice(crypt_length, sample.length)
 
-    @data_socket.syswrite(data)
+    @data_socket.write(data)
   end
 
   def rsa_encrypt(plain_text)
