@@ -105,9 +105,9 @@ module Net
       end
 
       private
-      def write_header(sock, client_id, cseq)
+      def write_header(sock, client_id, cseq, url = nil)
         self['Content-Length'] = @body.length.to_s if @body
-        url = sprintf("rtsp://%s/%s", sock.io.addr.last, client_id)
+        url ||= sprintf("rtsp://%s/%s", sock.io.addr.last, client_id)
         buf = "#{@method} #{url} RTSP/1.0\r\n" +
           "CSeq: #{cseq}\r\n"
         each_capitalized do |k,v|
@@ -124,9 +124,37 @@ module Net
       end
     end
 
+    class GetParameter < RTSPGenericRequest
+      def initialize(session_id, parameters)
+        super('GET_PARAMETER')
+        self['Content-Type'] = 'text/parameters'
+        self['Session']   = session_id
+        @body = parameters.join("\r\n") + "\r\n"
+      end
+    end
+
+    class Options < RTSPGenericRequest
+      def initialize
+        super('OPTIONS')
+      end
+
+      private
+      def write_header(sock, client_id, cseq, url = nil)
+        super(sock, client_id, cseq, '*')
+      end
+    end
+
     class Teardown < RTSPGenericRequest
       def initialize
         super('TEARDOWN')
+      end
+    end
+
+    class Flush < RTSPGenericRequest
+      def initialize(session_id, seq)
+        super('Flush')
+        self['Session']   = session_id
+        self['RTP-Info']  = "seq=0;rtptime=0"
       end
     end
 
@@ -146,7 +174,7 @@ module Net
       def initialize(session_id)
         super('RECORD')
         self['Range']     = 'npt=0-'
-        self['RTP-Info']  = 'seq=0;rtptime=0'
+        self['RTP-Info']  = "seq=0;rtptime=0"
         self['Session']   = session_id
       end
     end
@@ -167,6 +195,7 @@ module Net
         self['Apple-Challenge'] = sac.gsub(/[=\s]/, '')
       end
 
+      private
       def write_header(sock, client_id, cseq)
         @body = sprintf(
                 "v=0\r\n" +

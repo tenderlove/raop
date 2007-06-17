@@ -6,6 +6,8 @@ require 'raop'
 
 raop = Net::RAOP::Client.new(ARGV[0])
 raop.connect
+raop.volume = -10
 raop.play $stdin
+sleep 10
 raop.disconnect
 

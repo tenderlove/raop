@@ -3,6 +3,7 @@
 == 0.1.1
 
 * Fixing a bug with setting volume.
+* Added options and flush methods
 
 == 0.1.0
 

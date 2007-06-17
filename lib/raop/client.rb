@@ -78,6 +78,15 @@ class Net::RAOP::Client
   end
 
   private
+  def flush
+    puts @seq
+    @rtsp_client.request(Net::RTSP::Flush.new(@session_id, @seq))
+  end
+
+  def options
+    @rtsp_client.request(Net::RTSP::Options.new)
+  end
+
   @@data_cache = {}
   def send_sample(sample, pos = 0, count = sample.length)
     # FIXME do we really need +pos+ or +count+?
