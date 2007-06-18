@@ -4,6 +4,7 @@
 
 * Fixing a bug with setting volume.
 * Added options and flush methods
+* Using IO#write instead of IO#syswrite
 
 == 0.1.0
 
