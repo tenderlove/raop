@@ -4,7 +4,7 @@ require 'socket'
 class Net::RAOP::Client
   ##
   # The version of Net::RAOP::Client you're using
-  VERSION = '0.1.0'
+  VERSION = '0.1.1'
 
   ##
   # Create a new Net::RAOP::Client to connect to +host+ Airport Express
