@@ -141,6 +141,23 @@ class Net::RAOP::Client
 
   class << self
     @@cache = "\0" * 16387
+    @@decode_cache = "\0" * 16384
+
+    def decode_alac(bits)
+      new_bits = bits.length == 16387 ?
+        @@decode_cache.dup : "\0" * bits.length - 3
+
+      i = 0
+      len = bits.length
+      while i < len - 3
+        new_bits[i + 1] |= (bits[i + 2] & 0x01) << 7
+        new_bits[i + 1] |= (bits[i + 3] & 0xFE) >> 1
+        new_bits[i] |= (bits[i + 3] & 0x01) << 7
+        new_bits[i] |= (bits[i + 4] & 0xFE) >> 1
+        i += 2
+      end
+      new_bits.slice(0, 16384)
+    end
 
     def encode_alac(bits)
       new_bits =
