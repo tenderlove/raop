@@ -67,14 +67,24 @@ class Net::RAOP::Client
 
   ##
   # Set the +volume+ on the Airport Express. -144 is quiet, 0 is loud.
-  def volume=(volume, client_index = 0)
+  def volume=(volume, client_index = :all)
     volume = volume.abs
     raise ArgumentError if volume > 144
-    client = @clients[client_index]
-    params = Net::RTSP::SetParameter.new(client.session_id,
-                                         { :volume => "-#{volume}".to_i }
-                                        )
-    response = client.rtsp_client.request(params)
+
+    if client_index == :all
+      @clients.each { |client|
+        params = Net::RTSP::SetParameter.new(client.session_id,
+                                             { :volume => "-#{volume}".to_i }
+                                            )
+        response = client.rtsp_client.request(params)
+      }
+    else
+      client = @clients[client_index]
+      params = Net::RTSP::SetParameter.new(client.session_id,
+                                           { :volume => "-#{volume}".to_i }
+                                          )
+      response = client.rtsp_client.request(params)
+    end
   end
 
   ##
