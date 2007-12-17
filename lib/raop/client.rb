@@ -6,14 +6,24 @@ class Net::RAOP::Client
   # The version of Net::RAOP::Client you're using
   VERSION = '0.1.1'
 
+  class Server
+    attr_accessor :host, :aes_crypt, :rtsp_client, :session_id, :data_socket
+    def initialize(host, aes_crypt = aes_cipher)
+      @host         = host
+      @aes_crypt    = aes_crypt
+      @rtsp_client  = nil
+      @session_id   = nil
+      @data_socket  = nil
+    end
+  end
+
   ##
   # Create a new Net::RAOP::Client to connect to +host+ Airport Express
-  def initialize(host)
-    @host         = host
-    @aes_crypt    = aes_cipher
-    @rtsp_client  = nil
-    @session_id   = nil
-    @data_socket  = nil
+  def initialize(*host)
+    @aes_crypt = aes_cipher
+    @clients = host.map { |hostname|
+      Server.new(hostname, @aes_crypt)
+    }
   end
 
   ##
@@ -29,38 +39,42 @@ class Net::RAOP::Client
     key = [rsa_encrypt(@aes_key)].pack('m')
     iv  = [@aes_iv].pack('m')
 
-    @rtsp_client = Net::RTSP.new(@host, sid, sci)
+    @clients.each do |client|
+      client.rtsp_client = Net::RTSP.new(client.host, sid, sci)
 
-    announce = Net::RTSP::Announce.new(sac, key, iv)
-    response = @rtsp_client.request(announce)
+      announce = Net::RTSP::Announce.new(sac, key, iv)
+      response = client.rtsp_client.request(announce)
 
-    # FIXME Check for audio cable hookup
+      # FIXME Check for audio cable hookup
 
-    response = @rtsp_client.request(Net::RTSP::Setup.new)
-    transport_info = {}
-    response['transport'].split(';').each do |token|
-      k, v = token.split('=', 2)
-      transport_info[k] = v
+      response = client.rtsp_client.request(Net::RTSP::Setup.new)
+      transport_info = {}
+      response['transport'].split(';').each do |token|
+        k, v = token.split('=', 2)
+        transport_info[k] = v
+      end
+      client.data_socket = TCPSocket.open(client.host,
+                                          transport_info['server_port'])
+      client.session_id = response['session']
+
+      response = client.rtsp_client.request(Net::RTSP::Record.new(client.session_id))
+      params = Net::RTSP::SetParameter.new(client.session_id,
+                                           { :volume => -30 }
+                                          )
+      response = client.rtsp_client.request(params)
     end
-    @data_socket = TCPSocket.open(@host, transport_info['server_port'])
-    @session_id = response['session']
-
-    response = @rtsp_client.request(Net::RTSP::Record.new(@session_id))
-    params = Net::RTSP::SetParameter.new(@session_id,
-                                         { :volume => -30 }
-                                        )
-    response = @rtsp_client.request(params)
   end
 
   ##
   # Set the +volume+ on the Airport Express. -144 is quiet, 0 is loud.
-  def volume=(volume)
+  def volume=(volume, client_index = 0)
     volume = volume.abs
     raise ArgumentError if volume > 144
-    params = Net::RTSP::SetParameter.new(@session_id,
+    client = @clients[client_index]
+    params = Net::RTSP::SetParameter.new(client.session_id,
                                          { :volume => "-#{volume}".to_i }
                                         )
-    response = @rtsp_client.request(params)
+    response = client.rtsp_client.request(params)
   end
 
   ##
@@ -74,7 +88,9 @@ class Net::RAOP::Client
   ##
   # Disconnect from the Airport Express
   def disconnect
-    @rtsp_client.request(Net::RTSP::Teardown.new)
+    @clients.each { |client|
+      client.rtsp_client.request(Net::RTSP::Teardown.new)
+    }
   end
 
   private
@@ -84,7 +100,9 @@ class Net::RAOP::Client
   end
 
   def options
-    @rtsp_client.request(Net::RTSP::Options.new)
+    @clients.each { |client|
+      client.rtsp_client.request(Net::RTSP::Options.new)
+    }
   end
 
   @@data_cache = {}
@@ -93,7 +111,6 @@ class Net::RAOP::Client
     
     crypt_length = sample.length / 16 * 16
 
-    @aes_crypt.reset
     unless header = @@data_cache[count]
       header = [
         0x24, 0x00, 0x00, 0x00,
@@ -107,12 +124,15 @@ class Net::RAOP::Client
       header = @@data_cache[count]
     end
 
+    @aes_crypt.reset
     data = header +
     # Encryption section
       @aes_crypt.update(sample.slice(0, crypt_length)) +
       sample.slice(crypt_length, sample.length)
 
-    @data_socket.write(data)
+    @clients.each { |client|
+      client.data_socket.write(data)
+    }
   end
 
   def rsa_encrypt(plain_text)
