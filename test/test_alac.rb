@@ -19,6 +19,7 @@ class ALACTest < Test::Unit::TestCase
 
   def test_encode_alac
     output_frame = Net::RAOP::Client.encode_alac(@input_frame)
+    assert_equal(output_frame.length, @output_frame.length)
     assert_equal(@output_frame, output_frame)
   end
 end

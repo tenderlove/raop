@@ -169,5 +169,36 @@ class Net::RAOP::Client
     aes_crypt
   end
 
-  HEADER = [32, 0, 2].pack('C3')
+  HEADER = [2, 0].pack('C2')
+  class << self
+    def encode_alac(bits)
+      cb = HEADER + bits
+      cb = cb.unpack('v*')
+      i = 1
+      len = cb.length
+      while i < len
+        cb[i - 1] |= cb[i] >> 15
+        cb[i] <<= 1
+
+        i += 1
+      end
+      32.chr + cb.pack('n*')
+    end
+
+    def decode_alac(bits)
+      cb = bits.unpack('C*')
+      cb.shift
+      cb = cb.pack('C*').unpack('n*').reverse
+
+      len = cb.length
+      i = 0
+      while i < len - 1
+        cb[i] >>= 1
+        cb[i] |= cb[i + 1] << 15
+        i += 1
+      end
+      cb.pop
+      cb.reverse.pack('v*')
+    end
+  end
 end
