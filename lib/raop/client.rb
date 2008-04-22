@@ -169,8 +169,8 @@ class Net::RAOP::Client
     aes_crypt
   end
 
+  HEADER = [32, 0, 2].pack('C3')
   class << self
-    @@cache = "\0" * 16387
     @@decode_cache = "\0" * 16384
 
     def decode_alac(bits)
@@ -188,26 +188,23 @@ class Net::RAOP::Client
     end
 
     def encode_alac(bits)
-      new_bits =
-        bits.length == 16384 ?
-        @@cache.dup : "\0" * (bits.length + 3)
-
-      new_bits[0] = 32
-      new_bits[2] = 2
-
-      i = 0
-      len = bits.length
+      #cb = [32, 0, 2] + bits.unpack("C*")
+      cb = HEADER + bits
+      i, j = 3, 4
+      len = cb.length
       while i < len
-        data = bits[i + 1]
-        data1 = bits[i]
+        l = cb[i]
+        r = cb[j]
 
-        new_bits[i + 2] |= data >> 7
-        new_bits[i + 3] |= ((data & 0x7F) << 1) | (data1 >> 7)
-        new_bits[i + 4] |= (data1 & 0x7F) << 1
+        cb[i - 1] |= r >> 7
+        cb[i] = (r << 1) | (l >> 7)
+        cb[j] = l << 1
 
         i += 2
+        j += 2
       end
-      new_bits
+      #cb.pack("C#{len}")
+      cb
     end
   end
 end

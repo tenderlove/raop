@@ -1,5 +1,9 @@
 = Net::RAOP::Client CHANGELOG
 
+== 0.1.2
+
+* Speeding up encode_alac
+
 == 0.1.1
 
 * Fixing a bug with setting volume.
