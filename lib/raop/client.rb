@@ -4,7 +4,7 @@ require 'socket'
 class Net::RAOP::Client
   ##
   # The version of Net::RAOP::Client you're using
-  VERSION = '0.1.1'
+  VERSION = '0.1.2'
 
   class Server
     attr_accessor :host, :aes_crypt, :rtsp_client, :session_id, :data_socket
